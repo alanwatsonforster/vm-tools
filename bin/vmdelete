@@ -1,0 +1,13 @@
+#!/bin/sh
+
+nasdir=/nas/vm/vmbackup
+
+for guest in "$@"
+do
+  echo 1>&2 "vmdelete: $guest: deleting."
+  virsh -q destroy $guest 2>/dev/null
+  virsh -q undefine $guest 2>/dev/null
+  sudo rm -f /var/lib/libvirt/images/$guest.img
+  echo 1>&2 "vmdelete: $guest: done."
+done
+

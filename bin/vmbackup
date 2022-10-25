@@ -1,0 +1,33 @@
+#!/bin/sh
+
+localdir=/usr/local/var/vmbackup
+nasdir=/nas/vm/vmbackup
+
+mkdir -p $localdir
+cd $localdir
+
+exec >vmbackup-$(date +%FT%T).log 2>&1
+
+for guest in $(virsh list --name)
+do
+
+  echo 1>&2 "$(date "+%F %T"): vmbackup: $guest: backing up VM."
+  virsh -q managedsave $guest
+  virsh -q dumpxml $guest >$guest.xml
+  cp --sparse=always /var/lib/libvirt/images/$guest.img .
+
+  echo 1>&2 "$(date "+%F %T"): vmbackup: $guest: restarting VM."
+  virsh -q start $guest
+
+  echo 1>&2 "$(date "+%F %T"): vmbackup: $guest: copying backup to NAS."
+  rm -rf $nasdir/$guest-new
+  mkdir -p $nasdir/$guest-new
+  cp --sparse=always $guest.img $guest.xml $nasdir/$guest-new
+  rm -f $guest.xml $guest.img
+  rm -rf $nasdir/$guest 
+  mv $nasdir/$guest-new $nasdir/$guest
+
+  echo 1>&2 "$(date "+%F %T"): vmbackup: $guest: done."
+
+done
+

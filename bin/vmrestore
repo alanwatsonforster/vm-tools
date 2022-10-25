@@ -1,0 +1,17 @@
+#!/bin/sh
+
+nasdir=/nas/vm/vmbackup
+
+for guest in "$@"
+do
+  echo 1>&2 "vmrestore: $guest: copying disk image."
+  cp --sparse=always $nasdir/$guest/$guest.img /var/lib/libvirt/images/
+  echo 1>&2 "vmrestore: $guest: creating VM."
+  virsh -q undefine $guest 2>/dev/null
+  virsh -q define --file $nasdir/$guest/$guest.xml
+  echo 1>&2 "vmrestore: $guest: starting VM."
+  virsh -q start $guest
+  virsh -q autostart $guest
+  echo 1>&2 "vmrestore: $guest: done."
+done
+

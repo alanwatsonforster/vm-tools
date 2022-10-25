@@ -1,0 +1,10 @@
+#!/bin/sh
+
+for guest in "$@"
+do
+  virsh -q undefine $guest-clone 2>/dev/null
+  sudo rm -f /var/lib/libvirt/images/$guest-clone.img
+  virsh managedsave $guest
+  virt-clone --original $guest --auto-clone
+  virsh start $guest
+done
